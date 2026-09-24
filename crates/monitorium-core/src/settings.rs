@@ -74,6 +74,12 @@ pub struct Settings {
     pub monitors: BTreeMap<MonitorId, MonitorSettings>,
 }
 
+// Ctrl+Option+arrows belong to VoiceOver and window managers like Rectangle on macOS
+#[cfg(target_os = "macos")]
+const DEFAULT_HOTKEYS: (&str, &str) = ("Ctrl+Alt+Cmd+ArrowUp", "Ctrl+Alt+Cmd+ArrowDown");
+#[cfg(not(target_os = "macos"))]
+const DEFAULT_HOTKEYS: (&str, &str) = ("Ctrl+Alt+ArrowUp", "Ctrl+Alt+ArrowDown");
+
 impl Default for Settings {
     fn default() -> Self {
         Self {
@@ -87,8 +93,8 @@ impl Default for Settings {
             scroll_on_tray: true,
             scroll_step: 5,
             hotkeys_enabled: true,
-            hotkey_up: "Ctrl+Alt+ArrowUp".into(),
-            hotkey_down: "Ctrl+Alt+ArrowDown".into(),
+            hotkey_up: DEFAULT_HOTKEYS.0.into(),
+            hotkey_down: DEFAULT_HOTKEYS.1.into(),
             hotkey_off: String::new(),
             hotkey_step: 10,
             monitors: BTreeMap::new(),

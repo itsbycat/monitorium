@@ -1,6 +1,6 @@
 [package]
 name = "monitorium-platform"
-description = "OS backends for Monitorium (DDC/CI, WMI, gamma and overlay dimming, autostart)"
+description = "OS backends for Monitorium on Windows and macOS (DDC/CI, built-in brightness, gamma and overlay dimming, autostart)"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -27,4 +27,52 @@ windows = { version = "0.62", features = [
     "Win32_UI_HiDpi",
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_WindowsAndMessaging",
+] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = "0.6"
+dispatch2 = "0.3"
+libc = "0.2"
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = [
+    "std",
+    "block2",
+    "objc2-core-foundation",
+    "NSApplication",
+    "NSColor",
+    "NSEvent",
+    "NSGraphics",
+    "NSResponder",
+    "NSRunningApplication",
+    "NSScreen",
+    "NSView",
+    "NSWindow",
+    "NSWorkspace",
+] }
+objc2-core-foundation = { version = "0.3", default-features = false, features = [
+    "std",
+    "CFBase",
+    "CFCGTypes",
+    "CFDictionary",
+    "CFNumber",
+    "CFString",
+    "CFUUID",
+] }
+objc2-core-graphics = { version = "0.3", default-features = false, features = [
+    "std",
+    "libc",
+    "CGDirectDisplay",
+    "CGDisplayConfiguration",
+    "CGError",
+] }
+objc2-foundation = { version = "0.3", default-features = false, features = [
+    "std",
+    "block2",
+    "NSAppleEventDescriptor",
+    "NSAppleEventManager",
+    "NSGeometry",
+    "NSNotification",
+    "NSObject",
+    "NSOperation",
+    "NSString",
 ] }

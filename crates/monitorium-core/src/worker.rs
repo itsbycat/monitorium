@@ -127,6 +127,7 @@ impl Worker {
         let mut refresh = false;
         let mut reassign = false;
         let mut turn_off = false;
+        let mut shutdown = false;
 
         for cmd in batch {
             match cmd {
@@ -145,7 +146,11 @@ impl Worker {
                     self.settings = *settings;
                     reassign = true;
                 }
-                WorkerCmd::Shutdown => return false,
+                // still apply what came before it: `--set` sends its value right before this
+                WorkerCmd::Shutdown => {
+                    shutdown = true;
+                    break;
+                }
             }
         }
 
@@ -170,7 +175,7 @@ impl Worker {
                 .collect();
             self.backend.power_off(self.settings.power_off_method, &ddc);
         }
-        true
+        !shutdown
     }
 
     fn visible_entries(&self) -> impl Iterator<Item = &Entry> {
@@ -250,7 +255,7 @@ impl Worker {
             }
             match display.hardware {
                 Some((HardwareKind::Ddc, _)) => return Method::Ddc,
-                Some((HardwareKind::Wmi, _)) => return Method::Wmi,
+                Some((HardwareKind::Native, _)) => return Method::Native,
                 None => {}
             }
         }
@@ -302,7 +307,7 @@ impl Worker {
         let method = entry.method;
         let ms = self.settings.monitor(id);
         match method {
-            Method::Ddc | Method::Wmi => {
+            Method::Ddc | Method::Native => {
                 let level = slider_to_level(value, ms.min, ms.max);
                 match self.backend.set_hardware(id, level) {
                     Ok(()) => {
@@ -379,7 +384,7 @@ impl Worker {
 
 fn reading(display: &Display, method: Method) -> Option<u8> {
     match method {
-        Method::Ddc | Method::Wmi => display.hardware.map(|(_, percent)| percent),
+        Method::Ddc | Method::Native => display.hardware.map(|(_, percent)| percent),
         Method::Sdr => display.sdr,
         Method::Overlay | Method::Gamma | Method::None => None,
     }

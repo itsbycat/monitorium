@@ -3,7 +3,7 @@ use crate::model::{MonitorId, PowerOffMethod, Rect, SoftwareDimMode};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HardwareKind {
     Ddc,
-    Wmi,
+    Native,
 }
 
 #[derive(Clone, Debug)]

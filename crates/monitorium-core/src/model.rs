@@ -46,7 +46,7 @@ pub enum PowerOffMethod {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Method {
     Ddc,
-    Wmi,
+    Native,
     Sdr,
     Overlay,
     Gamma,
@@ -61,7 +61,9 @@ impl Method {
     pub fn label(self) -> &'static str {
         match self {
             Method::Ddc => "DDC/CI",
-            Method::Wmi => "Built-in",
+            // on macOS this also covers Apple's external displays
+            Method::Native if cfg!(target_os = "macos") => "Native",
+            Method::Native => "Built-in",
             Method::Sdr => "SDR content brightness (HDR)",
             Method::Overlay => "Software (overlay)",
             Method::Gamma => "Software (gamma)",

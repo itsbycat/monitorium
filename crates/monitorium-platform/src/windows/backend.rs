@@ -137,7 +137,7 @@ impl Backend for WindowsBackend {
                 let wmi_level = key.as_ref().and_then(|k| wmi_levels.get(k).copied());
                 let mut ddc = None;
                 let hardware = if let Some(level) = wmi_level {
-                    Some((HardwareKind::Wmi, level))
+                    Some((HardwareKind::Native, level))
                 } else if let Some(handle) = physical_for.remove(&t) {
                     match read_vcp(handle.0, VCP_BRIGHTNESS) {
                         Ok((current, max)) if max > 0 => {

@@ -35,7 +35,14 @@ fn main() -> eframe::Result<()> {
 
     init_logging();
 
-    let instance = SingleInstance::new(APP_ID);
+    // on macOS single-instance takes the name as a file path, relative to the working directory
+    let lock = if cfg!(target_os = "macos") {
+        settings::data_local_dir()
+            .map(|dir| dir.join("monitorium.lock").to_string_lossy().into_owned())
+    } else {
+        None
+    };
+    let instance = SingleInstance::new(lock.as_deref().unwrap_or(APP_ID));
     match &instance {
         Ok(instance) if !instance.is_single() => {
             log::info!("another instance is already running");
@@ -64,6 +71,7 @@ fn main() -> eframe::Result<()> {
         viewport,
         centered: false,
         persist_window: false,
+        event_loop_builder: event_loop_builder(),
         ..Default::default()
     };
 
@@ -72,6 +80,24 @@ fn main() -> eframe::Result<()> {
         options,
         Box::new(move |cc| Ok(Box::new(app::App::new(cc, autostart)))),
     )
+}
+
+#[cfg(target_os = "macos")]
+fn event_loop_builder() -> Option<eframe::EventLoopBuilderHook> {
+    use winit::platform::macos::{ActivationPolicy, EventLoopBuilderExtMacOS};
+
+    // a menu bar app: no Dock icon or menu bar, and no stealing focus when started at login
+    Some(Box::new(|builder| {
+        builder
+            .with_activation_policy(ActivationPolicy::Accessory)
+            .with_default_menu(false)
+            .with_activate_ignoring_other_apps(false);
+    }))
+}
+
+#[cfg(not(target_os = "macos"))]
+fn event_loop_builder() -> Option<eframe::EventLoopBuilderHook> {
+    None
 }
 
 fn init_logging() {

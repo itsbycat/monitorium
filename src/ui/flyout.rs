@@ -5,6 +5,8 @@ use monitorium_core::Method;
 use super::icon_button;
 use crate::app::{App, Page};
 
+const POINTS_PER_SCROLL_STEP: f32 = 40.0;
+
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
     header(app, ui);
     ui.add_space(2.0);
@@ -133,22 +135,9 @@ fn brightness_row(
         let mut changed = response.changed();
 
         if response.hovered() {
-            let scroll: f32 = ui.input(|i| {
-                i.events
-                    .iter()
-                    .filter_map(|e| match e {
-                        egui::Event::MouseWheel { delta, .. } => Some(delta.y),
-                        _ => None,
-                    })
-                    .sum()
-            });
-            if scroll != 0.0 {
-                let delta = if scroll > 0.0 {
-                    i16::from(scroll_step)
-                } else {
-                    -i16::from(scroll_step)
-                };
-                *value = (i16::from(*value) + delta).clamp(0, 100) as u8;
+            let steps = scroll_steps(ui, response.id.with("scroll"));
+            if steps != 0 {
+                *value = (i16::from(*value) + steps * i16::from(scroll_step)).clamp(0, 100) as u8;
                 changed = true;
             }
         }
@@ -160,4 +149,34 @@ fn brightness_row(
         changed
     })
     .inner
+}
+
+// a wheel notch is one step, while trackpads send streams of small point deltas that add up
+fn scroll_steps(ui: &egui::Ui, id: egui::Id) -> i16 {
+    let (lines, points) = ui.input(|i| {
+        i.events
+            .iter()
+            .fold((0.0f32, 0.0f32), |(lines, points), event| match event {
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta,
+                    ..
+                } => (lines, points + delta.y),
+                egui::Event::MouseWheel { delta, .. } => (lines + delta.y, points),
+                _ => (lines, points),
+            })
+    });
+    let point_steps = ui.data_mut(|data| {
+        let pending = data.get_temp_mut_or_default::<f32>(id);
+        *pending += points;
+        let steps = (*pending / POINTS_PER_SCROLL_STEP).trunc();
+        *pending -= steps * POINTS_PER_SCROLL_STEP;
+        steps as i16
+    });
+    let line_steps = if lines == 0.0 {
+        0
+    } else {
+        lines.signum() as i16
+    };
+    line_steps + point_steps
 }

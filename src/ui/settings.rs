@@ -95,15 +95,18 @@ fn brightness(app: &mut App, ui: &mut egui::Ui) {
     let s = &mut app.settings;
     section(ui, "Brightness");
     ui.checkbox(&mut s.link_levels, "Link all monitors");
-    ui.checkbox(
-        &mut s.hdr_sdr_brightness,
-        "Use SDR content brightness on HDR displays",
-    );
-    hint(
-        ui,
-        "Most monitors lock their backlight in HDR mode, so DDC/CI has no visible effect there. \
-         This adjusts the same setting as Windows' HDR brightness slider instead.",
-    );
+    // macOS has no SDR brightness setting for HDR displays
+    if cfg!(windows) {
+        ui.checkbox(
+            &mut s.hdr_sdr_brightness,
+            "Use SDR content brightness on HDR displays",
+        );
+        hint(
+            ui,
+            "Most monitors lock their backlight in HDR mode, so DDC/CI has no visible effect \
+             there. This adjusts the same setting as Windows' HDR brightness slider instead.",
+        );
+    }
     ui.checkbox(
         &mut s.software_fallback,
         "Dim monitors without DDC/CI in software",
@@ -124,6 +127,10 @@ fn brightness(app: &mut App, ui: &mut egui::Ui) {
             SoftwareDimMode::Overlay => {
                 "A dark, click-through layer over the screen. Can dim almost to black."
             }
+            SoftwareDimMode::Gamma if cfg!(target_os = "macos") => {
+                "Scales the display's color curve. Night Shift and apps like f.lux can undo it \
+                 for a moment."
+            }
             SoftwareDimMode::Gamma => {
                 "Scales the display's color curve. Windows limits it to about half brightness, \
                  and HDR displays use the overlay instead."
@@ -135,6 +142,7 @@ fn brightness(app: &mut App, ui: &mut egui::Ui) {
         ui.label("Turn off displays with");
         let method = &mut s.power_off_method;
         let label = |m: PowerOffMethod| match m {
+            PowerOffMethod::System if cfg!(target_os = "macos") => "macOS",
             PowerOffMethod::System => "Windows",
             PowerOffMethod::Ddc => "DDC/CI",
             PowerOffMethod::Both => "Both",

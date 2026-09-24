@@ -46,7 +46,7 @@ struct Flyout {
 
 pub struct App {
     ctx: egui::Context,
-    hwnd: isize,
+    window: isize,
     events: Receiver<AppEvent>,
     worker_events: Receiver<WorkerEvent>,
     worker: Option<WorkerHandle>,
@@ -60,6 +60,7 @@ pub struct App {
     last_refresh: Instant,
     frame_count: u64,
     start_hidden: bool,
+    started: bool,
 
     pub settings: Settings,
     pub monitors: Vec<MonitorInfo>,
@@ -73,8 +74,9 @@ impl App {
         let ctx = cc.egui_ctx.clone();
         ui::setup_style(&ctx);
 
-        let hwnd = match cc.window_handle().map(|h| h.as_raw()) {
+        let window = match cc.window_handle().map(|h| h.as_raw()) {
             Ok(RawWindowHandle::Win32(handle)) => handle.hwnd.get(),
+            Ok(RawWindowHandle::AppKit(handle)) => handle.ns_view.as_ptr() as isize,
             _ => 0,
         };
 
@@ -86,6 +88,11 @@ impl App {
             && let Err(err) = platform::autostart::set_enabled(true)
         {
             log::warn!("enabling autostart failed: {err}");
+        }
+        if !cfg!(debug_assertions)
+            && let Err(err) = platform::autostart::refresh()
+        {
+            log::warn!("updating autostart failed: {err}");
         }
         settings.start_with_os = platform::autostart::is_enabled();
         if let Err(err) = settings.save() {
@@ -128,7 +135,7 @@ impl App {
 
         Self {
             ctx,
-            hwnd,
+            window,
             events,
             worker_events,
             worker: Some(worker),
@@ -151,6 +158,7 @@ impl App {
             last_refresh: Instant::now(),
             frame_count: 0,
             start_hidden: autostart,
+            started: false,
             settings,
             monitors: Vec::new(),
             monitors_loaded: false,
@@ -252,7 +260,7 @@ impl App {
 
     pub fn quit(&mut self) {
         log::info!("quitting");
-        platform::hide_window(self.hwnd);
+        platform::hide_window(self.window);
         if let Some(worker) = self.worker.take() {
             worker.shutdown(Duration::from_secs(3));
         }
@@ -279,7 +287,7 @@ impl App {
         self.flyout.anchor = anchor.or_else(|| self.tray.as_ref().and_then(Tray::rect));
         self.flyout.visible = true;
         self.flyout.was_focused = false;
-        platform::place_flyout(self.hwnd, self.flyout.anchor, self.flyout.size, true);
+        platform::place_flyout(self.window, self.flyout.anchor, self.flyout.size, true);
         if self.last_refresh.elapsed() > REFRESH_ON_OPEN_INTERVAL {
             self.refresh();
         }
@@ -294,7 +302,7 @@ impl App {
         self.flyout.was_focused = false;
         self.flyout.hidden_at = Some(Instant::now());
         self.stop_recording();
-        platform::hide_window(self.hwnd);
+        platform::hide_window(self.window);
     }
 
     fn fit_flyout(&mut self, height: f32) {
@@ -304,7 +312,7 @@ impl App {
         }
         self.flyout.size.height = height;
         if self.flyout.visible {
-            platform::place_flyout(self.hwnd, self.flyout.anchor, self.flyout.size, false);
+            platform::place_flyout(self.window, self.flyout.anchor, self.flyout.size, false);
         }
     }
 
@@ -427,28 +435,31 @@ impl App {
                     self.send(WorkerCmd::Step(notches as i16 * step));
                 }
             }
+            PlatformEvent::Reopen => self.show_flyout(None, Page::Monitors),
         }
     }
 }
 
 impl eframe::App for App {
     fn logic(&mut self, _ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // eframe force-shows the window after the first frame, so place or hide it on the second.
+        // This is in logic() because eframe skips ui() for hidden windows, which is how macOS
+        // sees the off-screen first frame.
+        if self.frame_count >= 1 && !self.started {
+            self.started = true;
+            if self.start_hidden {
+                platform::hide_window(self.window);
+            } else {
+                self.show_flyout(None, Page::Monitors);
+            }
+        }
         self.process_events();
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.frame_count += 1;
-        match self.frame_count {
-            // eframe force-shows the window after the first frame, so place or hide it on the second
-            1 => self.ctx.request_repaint(),
-            2 => {
-                if self.start_hidden {
-                    platform::hide_window(self.hwnd);
-                } else {
-                    self.show_flyout(None, Page::Monitors);
-                }
-            }
-            _ => {}
+        if self.frame_count == 1 {
+            self.ctx.request_repaint();
         }
 
         let ctx = ui.ctx().clone();
@@ -458,7 +469,7 @@ impl eframe::App for App {
         }
 
         if self.flyout.visible {
-            if self.frame_count > 2 && !platform::is_window_visible(self.hwnd) {
+            if self.frame_count > 2 && !platform::is_window_visible(self.window) {
                 self.flyout.visible = false;
             }
             let focused = ctx.input(|i| i.viewport().focused).unwrap_or(false);

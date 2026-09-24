@@ -9,9 +9,14 @@ mod windows;
 #[cfg(windows)]
 pub use windows::*;
 
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(target_os = "macos")]
+pub use macos::*;
+
+#[cfg(not(any(windows, target_os = "macos")))]
 mod stub;
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 pub use stub::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -19,6 +24,8 @@ pub enum PlatformEvent {
     DisplaysChanged,
     ThemeChanged,
     TrayScroll(i32),
+    /// The app was opened again while running (macOS)
+    Reopen,
 }
 
 pub type EventCallback = Arc<dyn Fn(PlatformEvent) + Send + Sync>;

@@ -49,6 +49,8 @@ impl Tray {
 
         let icon = TrayIconBuilder::new()
             .with_icon(icons::tray_icon(light_taskbar))
+            // macOS recolors template images to suit the menu bar
+            .with_icon_as_template(cfg!(target_os = "macos"))
             .with_tooltip("Monitorium")
             .with_menu(Box::new(menu))
             .with_menu_on_left_click(false)

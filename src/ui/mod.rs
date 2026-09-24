@@ -124,7 +124,8 @@ fn hotkey_text(key: egui::Key, modifiers: egui::Modifiers) -> Option<String> {
     let name = key.name();
     let is_function_key =
         name.len() > 1 && name.starts_with('F') && name[1..].chars().all(|c| c.is_ascii_digit());
-    if !(modifiers.ctrl || modifiers.alt || modifiers.shift) && !is_function_key {
+    let cmd = cfg!(target_os = "macos") && modifiers.mac_cmd;
+    if !(modifiers.ctrl || modifiers.alt || modifiers.shift || cmd) && !is_function_key {
         return None;
     }
     let key_name = [key.name(), key.symbol_or_name()]
@@ -140,6 +141,9 @@ fn hotkey_text(key: egui::Key, modifiers: egui::Modifiers) -> Option<String> {
     }
     if modifiers.shift {
         parts.push("Shift");
+    }
+    if cmd {
+        parts.push("Cmd");
     }
     parts.push(key_name);
     let text = parts.join("+");

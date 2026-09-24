@@ -39,6 +39,10 @@ raw-window-handle = "0.6"
 single-instance = "0.3"
 simplelog = "0.12"
 
+# eframe doesn't re-export winit's macOS event loop options
+[target.'cfg(target_os = "macos")'.dependencies]
+winit = { version = "0.30", default-features = false }
+
 [build-dependencies]
 winresource = "0.1"
 
@@ -73,6 +77,13 @@ icons = [
     "assets/icons/icon.ico",
 ]
 formats = ["nsis"]
+
+[package.metadata.packager.macos]
+minimum-system-version = "11.0"
+# a menu bar app without a Dock icon
+background-app = true
+# ad-hoc: without any signature, downloaded builds show as damaged on Apple silicon
+signing-identity = "-"
 
 [package.metadata.packager.nsis]
 installer-mode = "currentUser"
