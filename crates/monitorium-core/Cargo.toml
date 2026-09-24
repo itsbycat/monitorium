@@ -1,0 +1,15 @@
+[package]
+name = "monitorium-core"
+description = "Platform-independent model, settings and brightness worker for Monitorium"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+crossbeam-channel.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+directories = "6"
