@@ -87,8 +87,8 @@ Some docks, KVM switches, adapters and TVs don't pass DDC/CI through. Software d
 works on them. Click the refresh button in the panel after connecting a monitor.
 
 **Where are my settings?**
-`%APPDATA%\ByCat\Monitorium\config` (open it from Settings → About). The log file is in
-`%LOCALAPPDATA%\ByCat\Monitorium\data\monitorium.log`.
+`%APPDATA%\Monitorium\config` (open it from Settings → About). The log file is in
+`%LOCALAPPDATA%\Monitorium\data\monitorium.log`.
 
 ## Building from source
 

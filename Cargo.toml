@@ -78,5 +78,5 @@ formats = ["nsis"]
 installer-mode = "currentUser"
 installer-icon = "assets/icons/icon.ico"
 compression = "lzma"
-appdata-paths = ["$APPDATA/ByCat/Monitorium", "$LOCALAPPDATA/ByCat/Monitorium"]
+appdata-paths = ["$APPDATA/Monitorium", "$LOCALAPPDATA/Monitorium"]
 display-language-selector = false

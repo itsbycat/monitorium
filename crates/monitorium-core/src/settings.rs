@@ -12,7 +12,7 @@ const SETTINGS_FILE: &str = "settings.json";
 const STATE_FILE: &str = "state.json";
 
 fn project_dirs() -> Option<ProjectDirs> {
-    ProjectDirs::from("com", "ByCat", "Monitorium")
+    ProjectDirs::from_path(PathBuf::from("Monitorium"))
 }
 
 pub fn config_dir() -> Option<PathBuf> {
