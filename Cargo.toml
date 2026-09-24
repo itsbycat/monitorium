@@ -5,7 +5,7 @@ resolver = "3"
 [workspace.package]
 version = "1.0.0"
 edition = "2024"
-authors = ["ByCat <admin@bycat.one>"]
+authors = ["ByCat"]
 license = "MIT"
 
 [workspace.dependencies]
@@ -62,7 +62,7 @@ LegalCopyright = "Copyright © 2026 ByCat"
 product-name = "Monitorium"
 identifier = "com.bycat.monitorium"
 publisher = "ByCat"
-authors = ["ByCat <admin@bycat.one>"]
+authors = ["ByCat"]
 description = "Control monitor brightness with DDC/CI or software dimming"
 copyright = "Copyright © 2026 ByCat"
 category = "Utility"
